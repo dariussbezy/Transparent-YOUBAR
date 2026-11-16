@@ -9,8 +9,8 @@ import type { Level } from './shared'
  * tint and the light border/highlight rule are copied one to one.
  */
 export interface LevelLook {
-	/** Alpha of the tinted body (the surface colour of the theme). High = most see-through. */
-	body: number
+	/** Alpha of the tinted body (the surface colour of the theme), per theme. High = most see-through. */
+	body: { dark: number; light: number }
 	/** Alpha of the 1px light border. */
 	border: number
 	/** Alpha of the brightest band of the top highlight. */
@@ -19,9 +19,24 @@ export interface LevelLook {
 }
 
 export const LevelLooks: Record<Level, LevelLook> = {
-	low: { body: 0.82, border: 0.14, highlight: 0.08, shadow: 0.22 },
-	medium: { body: 0.64, border: 0.2, highlight: 0.13, shadow: 0.28 },
-	high: { body: 0.44, border: 0.26, highlight: 0.18, shadow: 0.34 },
+	low: {
+		body: { dark: 0.82, light: 0.86 },
+		border: 0.14,
+		highlight: 0.08,
+		shadow: 0.22,
+	},
+	medium: {
+		body: { dark: 0.62, light: 0.68 },
+		border: 0.2,
+		highlight: 0.13,
+		shadow: 0.28,
+	},
+	high: {
+		body: { dark: 0.42, light: 0.5 },
+		border: 0.26,
+		highlight: 0.18,
+		shadow: 0.34,
+	},
 }
 
 export const LevelLabels: Record<Level, { label: string; subLabel: string }> = {
@@ -99,7 +114,10 @@ export function useGlassColors(level: Level): GlassColors {
 			'BACKGROUND_BASE_LOW',
 		])
 		return {
-			body: withAlpha(surface, look.body),
+			body: withAlpha(
+				surface,
+				theme === 'light' ? look.body.light : look.body.dark,
+			),
 			// Dark themes get a white light edge; light themes use the theme's own border colour.
 			border:
 				theme === 'light'

@@ -5,9 +5,8 @@ import {
 } from '@valenced/modules/finders/filters'
 import { after } from '@valenced/patcher'
 import { Children, cloneElement, isValidElement } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
 import { useMc } from './bridge'
-import { describe, diagCount, diagError, diagSet } from './diag'
 import {
 	FALLBACK_RADIUS,
 	HIGHLIGHT_BANDS,
@@ -116,6 +115,24 @@ function radiusOf(style: unknown) {
 /** True once `YouBarBackground` is patched: it then carries the fill, so the root must not tint twice. */
 let backgroundPatched = false
 
+/** Clears the opaque background and the native shadow of Discord's own wrapper layers. */
+const CLEAR_WRAPPER = {
+	backgroundColor: 'transparent',
+	shadowOpacity: 0,
+	elevation: 0,
+} as const
+
+/** Android draws a native shadow through a translucent surface as a black shape, so only iOS gets one. */
+const softShadow = (color: string | undefined, opacity: number) =>
+	Platform.OS === 'ios'
+		? {
+				shadowColor: color,
+				shadowOpacity: opacity,
+				shadowRadius: 16,
+				shadowOffset: { width: 0, height: 6 },
+			}
+		: { shadowOpacity: 0, elevation: 0 }
+
 /**
  * Runs after `YouBarBackground` (Discord's own bar surface, an opaque child of the bar) or, when that
  * is not found, after `YouBar`: tints the surface and adds the glass layers. While the Music Controls
@@ -128,19 +145,12 @@ function useGlass(rendered: ReactNode, where: string): ReactNode {
 	const mc = useMc()
 	const level = mc ? mc.level : settings.level
 	const colors = useGlassColors(level)
-	diagCount(where)
-	if (!settings.enabled || !isValidElement(rendered)) {
-		diagSet(`${where} output`, `skipped (${describe(rendered).slice(0, 80)})`)
-		return rendered
-	}
+	if (!settings.enabled || !isValidElement(rendered)) return rendered
 	const root = rendered as ReactElement<any>
-	diagSet(`${where} output`, describe(root))
-	diagSet(
-		'Mode',
-		mc ? `following Music Controls (${mc.level})` : `own (${level})`,
-	)
-	// The YouBar root only tints when no separate background component was found.
-	if (where === 'YouBar' && backgroundPatched) return rendered
+	// The YouBar root only tints when no separate background component was found; otherwise its own
+	// opaque colour and shadow are cleared so nothing dark shows behind the translucent surface.
+	if (where === 'YouBar' && backgroundPatched)
+		return cloneElement(root, { style: [root.props.style, CLEAR_WRAPPER] })
 
 	const look = LevelLooks[level]
 	const radius = radiusOf(root.props.style)
@@ -161,11 +171,7 @@ function useGlass(rendered: ReactNode, where: string): ReactNode {
 				borderRadius: radius,
 				borderWidth: 1,
 				borderColor: colors.border,
-				shadowColor: colors.shadow,
-				shadowOpacity: look.shadow,
-				shadowRadius: 16,
-				shadowOffset: { width: 0, height: 6 },
-				elevation: 10,
+				...softShadow(colors.shadow, look.shadow),
 			}
 	const layers = (
 		<GlassLayers
@@ -236,7 +242,6 @@ function patchByName(
 	transform: (rendered: ReactNode) => ReactNode,
 ) {
 	const patched = new WeakSet<object>()
-	diagSet(`${name} module`, 'searching…')
 	cleanup(
 		getModules(
 			withComponentName(name),
@@ -252,10 +257,6 @@ function patchByName(
 						| Record<string, AnyFn>
 						| undefined
 					const key = hasType ? 'type' : hasRender ? 'render' : 'default'
-					diagSet(
-						`${name} module`,
-						`found, patching "${key}" (memo=${hasType}, forwardRef=${hasRender})`,
-					)
 					if (
 						!target ||
 						typeof target[key] !== 'function' ||
@@ -268,14 +269,12 @@ function patchByName(
 						after(target, key, rendered => {
 							try {
 								return transform(rendered as ReactNode)
-							} catch (error) {
-								diagError(name, error)
+							} catch {
 								return rendered
 							}
 						}),
 					)
 				} catch (error) {
-					diagError(`${name} patch`, error)
 					onError(error)
 				}
 			},
@@ -302,10 +301,4 @@ export function patchYouBar(
 	patchByName('YouBar', cleanup, onError, rendered =>
 		useGlass(rendered, 'YouBar'),
 	)
-	// Only to report the tree Discord renders, which shows where the surface really is.
-	patchByName('YouBarThemed', cleanup, onError, rendered => {
-		diagCount('YouBarThemed')
-		diagSet('YouBarThemed output', describe(rendered))
-		return rendered
-	})
 }

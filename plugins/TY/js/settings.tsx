@@ -1,14 +1,11 @@
 import Page from '@valenced/components/Page'
 import TableRowAssetIcon from '@valenced/components/TableRowAssetIcon'
-import { ToastActionCreators } from '@valenced/discord/actions'
 import { Tokens } from '@valenced/discord/common/tokens'
 import { Design } from '@valenced/discord/design'
-import { Clipboard } from '@valenced/externals/react-native-clipboard'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import manifest from '../manifest.json'
 import { useMc } from './bridge'
-import { report, useDiag } from './diag'
-import { LevelLabels, LevelLooks, useGlassColors } from './glass'
+import { LevelLabels, useGlassColors } from './glass'
 import { GlassLayers } from './inject'
 import { Levels, setSetting, useSettings } from './shared'
 import type { Level } from './shared'
@@ -43,7 +40,6 @@ function Preview() {
 	const mc = useMc()
 	const level = mc ? mc.level : settings.level
 	const colors = useGlassColors(level)
-	const look = LevelLooks[level]
 	const stripes = useStripes()
 	return (
 		// custom: a static mock of the bar over a backdrop; no native component draws this
@@ -68,11 +64,6 @@ function Preview() {
 					backgroundColor: settings.enabled ? colors.body : undefined,
 					borderWidth: settings.enabled ? 1 : 0,
 					borderColor: colors.border,
-					shadowColor: colors.shadow,
-					shadowOpacity: look.shadow,
-					shadowRadius: 16,
-					shadowOffset: { width: 0, height: 6 },
-					elevation: 10,
 				}}
 			>
 				{settings.enabled ? (
@@ -85,39 +76,6 @@ function Preview() {
 				) : null}
 			</View>
 		</View>
-	)
-}
-
-function Diagnostics() {
-	const diag = useDiag()
-	const rows = [
-		...Object.entries(diag.lines).map(([k, v]) => [k, v] as const),
-		...Object.entries(diag.renders).map(
-			([k, v]) => [`${k} renders`, String(v)] as const,
-		),
-		...diag.errors.map(e => ['error', e] as const),
-	]
-	return (
-		<Design.TableRowGroup title="Diagnostics">
-			{rows.map(([label, value]) => (
-				<Design.TableRow
-					key={label + value.slice(0, 20)}
-					label={label}
-					subLabel={value}
-					subLabelLineClamp={8}
-				/>
-			))}
-			<Design.TableRow
-				label="Copy diagnostics"
-				icon={icon('CopyIcon')}
-				onPress={() => {
-					void Clipboard.setString(report())
-					ToastActionCreators.open('dariuss.transparent-youbar.copied', {
-						text: 'Diagnostics copied',
-					})
-				}}
-			/>
-		</Design.TableRowGroup>
 	)
 }
 
@@ -165,7 +123,6 @@ export default function SettingsComponent() {
 							/>
 						))}
 					</Design.TableRadioGroup>
-					<Diagnostics />
 					<Design.Text variant="text-sm/medium" color="text-muted">
 						Transparent YOUBAR {manifest.version}
 					</Design.Text>

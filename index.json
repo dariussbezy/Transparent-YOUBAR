@@ -9,13 +9,13 @@
       "author": "dariussbezy <908767091522420817> (https://github.com/dariussbezy \"GitHub\")",
       "icon": "PaintPaletteIcon",
       "channels": {
-        "latest": "1.0.0"
+        "latest": "1.0.1"
       },
       "versions": {
-        "1.0.0": {
-          "url": "https://raw.githubusercontent.com/dariussbezy/Transparent-YOUBAR/main/pool/dariuss.transparent-youbar@1.0.0.zip",
-          "sha256": "c066ac8f17026ba0f946042eb8910aec84dd9a3f7703d2b88f46759be17c46ed",
-          "size": 5065,
+        "1.0.1": {
+          "url": "https://raw.githubusercontent.com/dariussbezy/Transparent-YOUBAR/main/pool/dariuss.transparent-youbar@1.0.1.zip",
+          "sha256": "fc7ee1648a72aa96f57b8bef702356346fc6983f51233a5efc70da7e88d66c7f",
+          "size": 4262,
           "dependencies": {
             "valenced.api": {
               "version": ">=1 <2"
