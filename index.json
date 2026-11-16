@@ -9,13 +9,13 @@
       "author": "dariussbezy <908767091522420817> (https://github.com/dariussbezy \"GitHub\")",
       "icon": "PaintPaletteIcon",
       "channels": {
-        "latest": "1.0.0"
+        "latest": "1.0.1"
       },
       "versions": {
-        "1.0.0": {
-          "url": "https://raw.githubusercontent.com/dariussbezy/Liquid-Glass-YOUBAR/main/pool/dariuss.liquid-glass-youbar@1.0.0.zip",
-          "sha256": "ca7897d8e3f926beb1c1bc6a18bd6173e5b85a67b34452d5b9be3b02ea2ffee9",
-          "size": 4575,
+        "1.0.1": {
+          "url": "https://raw.githubusercontent.com/dariussbezy/Liquid-Glass-YOUBAR/main/pool/dariuss.liquid-glass-youbar@1.0.1.zip",
+          "sha256": "8b633af378b1aae98645af5831ed6c159329f35dee5282e38e133caaaed2ac8a",
+          "size": 5566,
           "dependencies": {
             "valenced.api": {
               "version": ">=1 <2"

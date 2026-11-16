@@ -6,6 +6,7 @@ import {
 import { after } from '@valenced/patcher'
 import { Children, Component, cloneElement, isValidElement } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { describe, diagCount, diagError, diagSet } from './diag'
 import {
 	FALLBACK_RADIUS,
 	HIGHLIGHT_BANDS,
@@ -139,12 +140,25 @@ function radiusOf(style: unknown) {
 	return FALLBACK_RADIUS
 }
 
-/** Runs after `YouBar` rendered: tints its root and adds the glass layers as its first child. */
-function useGlass(rendered: ReactNode): ReactNode {
+/** True once `YouBarBackground` is patched: it then carries the fill, so the root must not tint twice. */
+let backgroundPatched = false
+
+/**
+ * Runs after `YouBarBackground` (Discord's own bar surface, drawn as an opaque child of the bar)
+ * or, when that is not found, after `YouBar`: tints the surface and adds the glass layers.
+ */
+function useGlass(rendered: ReactNode, where: string): ReactNode {
 	const settings = useSettings()
 	const colors = useGlassColors(settings.intensity)
-	if (!settings.enabled || !isValidElement(rendered)) return rendered
+	diagCount(where)
+	if (!settings.enabled || !isValidElement(rendered)) {
+		diagSet(`${where} output`, `skipped (${describe(rendered).slice(0, 80)})`)
+		return rendered
+	}
 	const root = rendered as ReactElement<any>
+	diagSet(`${where} output`, describe(root))
+	// The YouBar root only tints when no separate background component was found.
+	if (where === 'YouBar' && backgroundPatched) return rendered
 
 	const preset = Presets[settings.intensity]
 	const radius = radiusOf(root.props.style)
@@ -172,39 +186,84 @@ function useGlass(rendered: ReactNode): ReactNode {
 	)
 }
 
-/**
- * Patches Discord's `YouBar` render function itself, so the element keeps its type and name and
- * other plugins (Music Controls, Better You Bar) still find and wrap it. Registered through `cleanup`.
- */
-export function patchYouBar(
+/** Finds a component by name and patches its render function with `after`, through `cleanup`. */
+function patchByName(
+	name: string,
 	cleanup: (...undo: (() => void)[]) => void,
 	onError: (error: unknown) => void,
+	transform: (rendered: ReactNode) => ReactNode,
 ) {
 	const patched = new WeakSet<object>()
+	diagSet(`${name} module`, 'searching…')
 	cleanup(
 		getModules(
-			withComponentName('YouBar'),
+			withComponentName(name),
 			namespace => {
-				const ns = namespace as Record<string, unknown> | undefined
-				const inner = (ns?.default ?? ns) as Record<string, unknown> | undefined
-				const hasType = typeof inner?.type === 'function'
-				const hasRender = typeof inner?.render === 'function'
-				const target = (hasType || hasRender ? inner : ns) as
-					| Record<string, AnyFn>
-					| undefined
-				const key = hasType ? 'type' : hasRender ? 'render' : 'default'
-				if (!target || typeof target[key] !== 'function' || patched.has(target))
-					return
-				patched.add(target)
 				try {
+					const ns = namespace as Record<string, unknown> | undefined
+					const inner = (ns?.default ?? ns) as
+						| Record<string, unknown>
+						| undefined
+					const hasType = typeof inner?.type === 'function'
+					const hasRender = typeof inner?.render === 'function'
+					const target = (hasType || hasRender ? inner : ns) as
+						| Record<string, AnyFn>
+						| undefined
+					const key = hasType ? 'type' : hasRender ? 'render' : 'default'
+					diagSet(
+						`${name} module`,
+						`found, patching "${key}" (memo=${hasType}, forwardRef=${hasRender})`,
+					)
+					if (
+						!target ||
+						typeof target[key] !== 'function' ||
+						patched.has(target)
+					)
+						return
+					patched.add(target)
+					if (name === 'YouBarBackground') backgroundPatched = true
 					cleanup(
-						after(target, key, rendered => useGlass(rendered as ReactNode)),
+						after(target, key, rendered => {
+							try {
+								return transform(rendered as ReactNode)
+							} catch (error) {
+								diagError(name, error)
+								return rendered
+							}
+						}),
 					)
 				} catch (error) {
+					diagError(`${name} patch`, error)
 					onError(error)
 				}
 			},
 			{ returnNamespace: true },
 		),
 	)
+}
+
+/**
+ * Patches Discord's `YouBarBackground` and `YouBar` render functions in place, so the elements keep
+ * their type and name and other plugins (Music Controls, Better You Bar) still find and wrap them.
+ */
+export function patchYouBar(
+	cleanup: (...undo: (() => void)[]) => void,
+	onError: (error: unknown) => void,
+) {
+	backgroundPatched = false
+	cleanup(() => {
+		backgroundPatched = false
+	})
+	patchByName('YouBarBackground', cleanup, onError, rendered =>
+		useGlass(rendered, 'YouBarBackground'),
+	)
+	patchByName('YouBar', cleanup, onError, rendered =>
+		useGlass(rendered, 'YouBar'),
+	)
+	// Only to report the tree Discord renders, which shows where the surface really is.
+	patchByName('YouBarThemed', cleanup, onError, rendered => {
+		diagCount('YouBarThemed')
+		diagSet('YouBarThemed output', describe(rendered))
+		return rendered
+	})
 }

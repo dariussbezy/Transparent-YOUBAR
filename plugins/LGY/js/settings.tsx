@@ -1,9 +1,12 @@
 import Page from '@valenced/components/Page'
 import TableRowAssetIcon from '@valenced/components/TableRowAssetIcon'
+import { ToastActionCreators } from '@valenced/discord/actions'
 import { Tokens } from '@valenced/discord/common/tokens'
 import { Design } from '@valenced/discord/design'
+import { Clipboard } from '@valenced/externals/react-native-clipboard'
 import { StyleSheet, View } from 'react-native'
 import manifest from '../manifest.json'
+import { report, useDiag } from './diag'
 import { IntensityLabels, Presets, useGlassColors } from './glass'
 import { GlassLayers } from './inject'
 import { Intensities, setSetting, useSettings } from './shared'
@@ -82,6 +85,39 @@ function Preview() {
 	)
 }
 
+function Diagnostics() {
+	const diag = useDiag()
+	const rows = [
+		...Object.entries(diag.lines).map(([k, v]) => [k, v] as const),
+		...Object.entries(diag.renders).map(
+			([k, v]) => [`${k} renders`, String(v)] as const,
+		),
+		...diag.errors.map(e => ['error', e] as const),
+	]
+	return (
+		<Design.TableRowGroup title="Diagnostics">
+			{rows.map(([label, value]) => (
+				<Design.TableRow
+					key={label + value.slice(0, 20)}
+					label={label}
+					subLabel={value}
+					subLabelLineClamp={8}
+				/>
+			))}
+			<Design.TableRow
+				label="Copy diagnostics"
+				icon={icon('CopyIcon')}
+				onPress={() => {
+					void Clipboard.setString(report())
+					ToastActionCreators.open('dariuss.liquid-glass-youbar.copied', {
+						text: 'Diagnostics copied',
+					})
+				}}
+			/>
+		</Design.TableRowGroup>
+	)
+}
+
 export default function SettingsComponent() {
 	const settings = useSettings()
 	return (
@@ -130,6 +166,7 @@ export default function SettingsComponent() {
 						/>
 					))}
 				</Design.TableRadioGroup>
+				<Diagnostics />
 				<Design.Text variant="text-sm/medium" color="text-muted">
 					Liquid Glass YOUBAR {manifest.version}
 				</Design.Text>
