@@ -6,16 +6,17 @@ import { Design } from '@valenced/discord/design'
 import { Clipboard } from '@valenced/externals/react-native-clipboard'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import manifest from '../manifest.json'
+import { useMc } from './bridge'
 import { report, useDiag } from './diag'
-import { IntensityLabels, Presets, useGlassColors } from './glass'
+import { LevelLabels, LevelLooks, useGlassColors } from './glass'
 import { GlassLayers } from './inject'
-import { Intensities, setSetting, useSettings } from './shared'
-import type { Intensity } from './shared'
+import { Levels, setSetting, useSettings } from './shared'
+import type { Level } from './shared'
 
 const icon = (name: string) => <TableRowAssetIcon name={name} />
 
 const PREVIEW_HEIGHT = 64
-const PREVIEW_RADIUS = 28
+const PREVIEW_RADIUS = 20
 
 /** Backdrop colours taken from the theme's own status and brand tokens. */
 function useStripes() {
@@ -36,11 +37,13 @@ function useStripes() {
 	})
 }
 
-/** The bar's look on top of a colourful backdrop, so the translucency is visible. */
+/** The bar's look on top of a colourful backdrop, so the transparency is visible. */
 function Preview() {
 	const settings = useSettings()
-	const colors = useGlassColors(settings.intensity)
-	const preset = Presets[settings.intensity]
+	const mc = useMc()
+	const level = mc ? mc.level : settings.level
+	const colors = useGlassColors(level)
+	const look = LevelLooks[level]
 	const stripes = useStripes()
 	return (
 		// custom: a static mock of the bar over a backdrop; no native component draws this
@@ -62,22 +65,22 @@ function Preview() {
 					bottom: 16,
 					height: PREVIEW_HEIGHT,
 					borderRadius: PREVIEW_RADIUS,
-					backgroundColor: settings.enabled ? colors.fill : undefined,
-					borderWidth: settings.enabled && settings.border ? 1 : 0,
+					backgroundColor: settings.enabled ? colors.body : undefined,
+					borderWidth: settings.enabled ? 1 : 0,
 					borderColor: colors.border,
 					shadowColor: colors.shadow,
-					shadowOpacity: preset.shadowOpacity,
-					shadowRadius: preset.shadowRadius,
+					shadowOpacity: look.shadow,
+					shadowRadius: 16,
 					shadowOffset: { width: 0, height: 6 },
-					elevation: preset.elevation,
+					elevation: 10,
 				}}
 			>
 				{settings.enabled ? (
 					<GlassLayers
 						colors={colors}
-						intensity={settings.intensity}
+						level={level}
 						radius={PREVIEW_RADIUS}
-						blur={false}
+						joined={false}
 					/>
 				) : null}
 			</View>
@@ -109,7 +112,7 @@ function Diagnostics() {
 				icon={icon('CopyIcon')}
 				onPress={() => {
 					void Clipboard.setString(report())
-					ToastActionCreators.open('dariuss.liquid-glass-youbar.copied', {
+					ToastActionCreators.open('dariuss.transparent-youbar.copied', {
 						text: 'Diagnostics copied',
 					})
 				}}
@@ -120,6 +123,7 @@ function Diagnostics() {
 
 export default function SettingsComponent() {
 	const settings = useSettings()
+	const mc = useMc()
 	return (
 		<ScrollView keyboardShouldPersistTaps="handled">
 			<Page>
@@ -127,49 +131,43 @@ export default function SettingsComponent() {
 					<Design.TableRowGroup title="Preview">
 						<Preview />
 					</Design.TableRowGroup>
-					<Design.TableRowGroup title="Liquid Glass YOUBAR">
+					<Design.TableRowGroup title="Transparent YOUBAR">
 						<Design.TableSwitchRow
-							label="Enable"
+							label="Transparent look"
 							subLabel="Applies to the YouBar after Discord restarts."
 							icon={icon('PaintPaletteIcon')}
 							value={settings.enabled}
 							onValueChange={value => setSetting('enabled', value)}
 						/>
-						<Design.TableSwitchRow
-							label="Light border"
-							subLabel="A thin light edge around the bar."
-							icon={icon('EyeIcon')}
-							value={settings.border}
-							onValueChange={value => setSetting('border', value)}
-						/>
-						<Design.TableSwitchRow
-							label="Native blur (experimental)"
-							subLabel="Blur what is behind the bar with Discord's own blur view, when it can be found."
-							icon={icon('SparklesIcon')}
-							value={settings.realBlur}
-							onValueChange={value => setSetting('realBlur', value)}
-						/>
+						{mc ? (
+							<Design.TableRow
+								label="Following Music Controls"
+								subLabel={`Following Music Controls while its player is shown (${LevelLabels[mc.level].label}).`}
+								subLabelLineClamp={3}
+								icon={icon('MusicIcon')}
+							/>
+						) : null}
 					</Design.TableRowGroup>
 					<Design.TableRadioGroup
-						title="Glass intensity"
-						value={settings.intensity}
+						title="Transparency"
+						value={settings.level}
 						onChange={value => {
-							if (Intensities.includes(value as Intensity))
-								setSetting('intensity', value as Intensity)
+							if (Levels.includes(value as Level))
+								setSetting('level', value as Level)
 						}}
 					>
-						{Intensities.map(id => (
+						{Levels.map(id => (
 							<Design.TableRadioRow
 								key={id}
 								value={id}
-								label={IntensityLabels[id].label}
-								subLabel={IntensityLabels[id].subLabel}
+								label={LevelLabels[id].label}
+								subLabel={LevelLabels[id].subLabel}
 							/>
 						))}
 					</Design.TableRadioGroup>
 					<Diagnostics />
 					<Design.Text variant="text-sm/medium" color="text-muted">
-						Liquid Glass YOUBAR {manifest.version}
+						Transparent YOUBAR {manifest.version}
 					</Design.Text>
 				</Design.Stack>
 			</Page>

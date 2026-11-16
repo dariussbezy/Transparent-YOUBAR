@@ -1,23 +1,19 @@
 import type { JsonStorage } from '@valenced/json-storage'
 
-export type Intensity = 'frosted' | 'balanced' | 'clear'
+/** Transparency level. High is the most see-through. Same names and order as Music Controls. */
+export type Level = 'low' | 'medium' | 'high'
+
+export const Levels: Level[] = ['low', 'medium', 'high']
 
 export interface Settings {
 	enabled: boolean
-	intensity: Intensity
-	border: boolean
-	/** Use Discord's native blur view behind the bar when it can be found. */
-	realBlur: boolean
+	level: Level
 }
 
 export const DefaultSettings: Settings = {
 	enabled: true,
-	intensity: 'balanced',
-	border: true,
-	realBlur: false,
+	level: 'medium',
 }
-
-export const Intensities: Intensity[] = ['frosted', 'balanced', 'clear']
 
 let storage: JsonStorage<Settings> | undefined
 
@@ -30,10 +26,7 @@ function normalize(raw: Record<string, unknown> | undefined): Settings {
 	const settings = { ...DefaultSettings }
 	if (!raw) return settings
 	if (typeof raw.enabled === 'boolean') settings.enabled = raw.enabled
-	if (typeof raw.border === 'boolean') settings.border = raw.border
-	if (typeof raw.realBlur === 'boolean') settings.realBlur = raw.realBlur
-	if (Intensities.includes(raw.intensity as Intensity))
-		settings.intensity = raw.intensity as Intensity
+	if (Levels.includes(raw.level as Level)) settings.level = raw.level as Level
 	return settings
 }
 

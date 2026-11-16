@@ -6,7 +6,7 @@
   "scripts": {
     "build": "valenced-plugin build",
     "lint": "biome check",
-    "lint:types": "tsc -p plugins/LGY/tsconfig.json --noEmit"
+    "lint:types": "tsc -p plugins/TY/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@valenced/plugin-cli": "git+https://github.com/Valenced/valenced-plugin-cli.git#9ea9f9bfc91319e2b18c6b1c9ac0b993f8600c1d",

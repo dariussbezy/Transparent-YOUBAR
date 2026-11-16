@@ -1,21 +1,21 @@
 {
   "format": 1,
-  "name": "Liquid Glass YOUBAR",
-  "description": "Turns the YouBar into liquid glass: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
+  "name": "Transparent YOUBAR",
+  "description": "Turns the YouBar into transparent: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
   "plugins": {
-    "dariuss.liquid-glass-youbar": {
-      "name": "Liquid Glass YOUBAR",
-      "description": "Turns the YouBar into liquid glass: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
+    "dariuss.transparent-youbar": {
+      "name": "Transparent YOUBAR",
+      "description": "Turns the YouBar into transparent: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
       "author": "dariussbezy <908767091522420817> (https://github.com/dariussbezy \"GitHub\")",
       "icon": "PaintPaletteIcon",
       "channels": {
-        "latest": "1.0.3"
+        "latest": "1.0.0"
       },
       "versions": {
-        "1.0.3": {
-          "url": "https://raw.githubusercontent.com/dariussbezy/Liquid-Glass-YOUBAR/main/pool/dariuss.liquid-glass-youbar@1.0.3.zip",
-          "sha256": "0b1920fffffb6e22efee0619ab9ed869004e50fac5267fc5afd32dc6e191d6d7",
-          "size": 5799,
+        "1.0.0": {
+          "url": "https://raw.githubusercontent.com/dariussbezy/Transparent-YOUBAR/main/pool/dariuss.transparent-youbar@1.0.0.zip",
+          "sha256": "c066ac8f17026ba0f946042eb8910aec84dd9a3f7703d2b88f46759be17c46ed",
+          "size": 5065,
           "dependencies": {
             "valenced.api": {
               "version": ">=1 <2"

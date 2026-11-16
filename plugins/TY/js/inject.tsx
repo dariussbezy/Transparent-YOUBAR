@@ -4,20 +4,21 @@ import {
 	FilterScopes,
 } from '@valenced/modules/finders/filters'
 import { after } from '@valenced/patcher'
-import { Children, Component, cloneElement, isValidElement } from 'react'
+import { Children, cloneElement, isValidElement } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { useMc } from './bridge'
 import { describe, diagCount, diagError, diagSet } from './diag'
 import {
 	FALLBACK_RADIUS,
 	HIGHLIGHT_BANDS,
-	Presets,
+	LevelLooks,
 	useGlassColors,
 } from './glass'
 import { useSettings } from './shared'
 import type { Filter, FilterGenerator } from '@valenced/modules/finders/filters'
 import type { ReactElement, ReactNode } from 'react'
 import type { GlassColors } from './glass'
-import type { Intensity } from './shared'
+import type { Level } from './shared'
 
 type AnyFn = (...args: any[]) => any
 
@@ -35,7 +36,7 @@ const withComponentName = createFilterGenerator(
 			candidate => nameOf(candidate) === name,
 		)
 	},
-	([name]: [string]) => `dariuss.liquid-glass-youbar.component(${name})`,
+	([name]: [string]) => `dariuss.transparent-youbar.component(${name})`,
 	FilterScopes.Initialized,
 ) as unknown as FilterGenerator<
 	(
@@ -43,87 +44,59 @@ const withComponentName = createFilterGenerator(
 	) => Filter<{ Result: object; Scopes: [typeof FilterScopes.Initialized] }>
 >
 
-/** Renders nothing when the optional native blur view throws. */
-class Guard extends Component<{ children: ReactNode }, { failed: boolean }> {
-	state = { failed: false }
-	static getDerivedStateFromError() {
-		return { failed: true }
-	}
-	render() {
-		return this.state.failed ? null : this.props.children
-	}
-}
-
-let blurView: AnyFn | null | undefined
-/** Discord's native blur view, if it can be reached from JS. Looked up once, only when asked for. */
-function findBlurView() {
-	if (blurView !== undefined) return blurView
-	blurView = null
-	try {
-		getModules(
-			withComponentName('VisualEffectView'),
-			namespace => {
-				const ns = namespace as Record<string, unknown>
-				const candidate = (ns?.default ?? ns?.VisualEffectView ?? ns) as AnyFn
-				if (typeof candidate === 'function' || typeof candidate === 'object')
-					blurView = candidate
-			},
-			{ returnNamespace: true },
-		)
-	} catch {
-		blurView = null
-	}
-	return blurView
-}
-
-/** The layers drawn inside the bar: optional blur, a top highlight and a light top edge. */
+/** The layers drawn inside the bar: a soft top highlight and a light top edge (not when joined to the player). */
 export function GlassLayers({
 	colors,
-	intensity,
+	level,
 	radius,
-	blur,
+	joined,
 }: {
 	colors: GlassColors
-	intensity: Intensity
+	level: Level
 	radius: number
-	blur: boolean
+	/** Joined to the Music Controls card: square top corners and no highlight at the seam. */
+	joined: boolean
 }) {
-	const preset = Presets[intensity]
-	const Blur = blur ? (findBlurView() as AnyFn | null) : null
+	const look = LevelLooks[level]
 	return (
-		// custom: Discord has no glass surface component, so the sheen is stacked translucent views
+		// custom: Discord has no transparent surface component, so the sheen is stacked translucent views
 		<View
 			pointerEvents="none"
 			style={[
 				StyleSheet.absoluteFill,
-				{ borderRadius: radius, overflow: 'hidden' },
+				{
+					borderBottomLeftRadius: radius,
+					borderBottomRightRadius: radius,
+					borderTopLeftRadius: joined ? 0 : radius,
+					borderTopRightRadius: joined ? 0 : radius,
+					overflow: 'hidden',
+				},
 			]}
 		>
-			{Blur ? (
-				<Guard>
-					<Blur style={StyleSheet.absoluteFill} />
-				</Guard>
-			) : null}
-			{HIGHLIGHT_BANDS.map(([height, weight], index) => (
+			{joined
+				? null
+				: HIGHLIGHT_BANDS.map(([height, weight], index) => (
+						<View
+							// biome-ignore lint/suspicious/noArrayIndexKey: static list
+							key={index}
+							style={{
+								height: `${height * 100}%`,
+								backgroundColor: colors.highlight(look.highlight * weight),
+							}}
+						/>
+					))}
+			{joined ? null : (
 				<View
-					// biome-ignore lint/suspicious/noArrayIndexKey: static list
-					key={index}
 					style={{
-						height: `${height * 100}%`,
-						backgroundColor: colors.highlight(preset.highlight * weight),
+						position: 'absolute',
+						top: 0,
+						left: radius * 0.6,
+						right: radius * 0.6,
+						height: StyleSheet.hairlineWidth * 2,
+						backgroundColor: colors.highlight(Math.min(1, look.border * 2.4)),
 					}}
 				/>
-			))}
-			<View
-				style={{
-					position: 'absolute',
-					top: 0,
-					left: radius * 0.6,
-					right: radius * 0.6,
-					height: StyleSheet.hairlineWidth * 2,
-					backgroundColor: colors.highlight(Math.min(1, preset.border * 2.4)),
-				}}
-			/>
+			)}
 		</View>
 	)
 }
@@ -144,12 +117,17 @@ function radiusOf(style: unknown) {
 let backgroundPatched = false
 
 /**
- * Runs after `YouBarBackground` (Discord's own bar surface, drawn as an opaque child of the bar)
- * or, when that is not found, after `YouBar`: tints the surface and adds the glass layers.
+ * Runs after `YouBarBackground` (Discord's own bar surface, an opaque child of the bar) or, when that
+ * is not found, after `YouBar`: tints the surface and adds the glass layers. While the Music Controls
+ * card is shown the bar follows its level and joins it: square top corners, and no fill, border,
+ * highlight or shadow of its own, because the card is drawn behind the bar (it extends over the bar's
+ * area), so a second fill would stack on the card's and make the bar look more opaque than the card.
  */
 function useGlass(rendered: ReactNode, where: string): ReactNode {
 	const settings = useSettings()
-	const colors = useGlassColors(settings.intensity)
+	const mc = useMc()
+	const level = mc ? mc.level : settings.level
+	const colors = useGlassColors(level)
 	diagCount(where)
 	if (!settings.enabled || !isValidElement(rendered)) {
 		diagSet(`${where} output`, `skipped (${describe(rendered).slice(0, 80)})`)
@@ -157,39 +135,53 @@ function useGlass(rendered: ReactNode, where: string): ReactNode {
 	}
 	const root = rendered as ReactElement<any>
 	diagSet(`${where} output`, describe(root))
+	diagSet(
+		'Mode',
+		mc ? `following Music Controls (${mc.level})` : `own (${level})`,
+	)
 	// The YouBar root only tints when no separate background component was found.
 	if (where === 'YouBar' && backgroundPatched) return rendered
 
-	const preset = Presets[settings.intensity]
+	const look = LevelLooks[level]
 	const radius = radiusOf(root.props.style)
-	const style = {
-		backgroundColor: colors.fill,
-		borderWidth: settings.border ? 1 : 0,
-		borderColor: settings.border ? colors.border : 'transparent',
-		shadowColor: colors.shadow,
-		shadowOpacity: preset.shadowOpacity,
-		shadowRadius: preset.shadowRadius,
-		shadowOffset: { width: 0, height: 6 },
-		elevation: preset.elevation,
-	}
+	const joined = mc !== null
+	const style = joined
+		? {
+				backgroundColor: 'transparent',
+				borderTopLeftRadius: 0,
+				borderTopRightRadius: 0,
+				borderBottomLeftRadius: radius,
+				borderBottomRightRadius: radius,
+				borderWidth: 0,
+				shadowOpacity: 0,
+				elevation: 0,
+			}
+		: {
+				backgroundColor: colors.body,
+				borderRadius: radius,
+				borderWidth: 1,
+				borderColor: colors.border,
+				shadowColor: colors.shadow,
+				shadowOpacity: look.shadow,
+				shadowRadius: 16,
+				shadowOffset: { width: 0, height: 6 },
+				elevation: 10,
+			}
 	const layers = (
 		<GlassLayers
-			key="liquid-glass-youbar"
+			key="transparent-youbar"
 			colors={colors}
-			intensity={settings.intensity}
+			level={level}
 			radius={radius}
-			blur={settings.realBlur}
+			joined={joined}
 		/>
 	)
 	if (where === 'YouBarBackground') {
 		// Discord's surface is animated and keeps its own opaque colour, so it is replaced by a plain
 		// view with the same position, which only loses the animated corner radius of the quest dock.
 		return (
-			// custom: Discord has no glass surface component
-			<View
-				pointerEvents="none"
-				style={[positionOf(root.props.style), { borderRadius: radius }, style]}
-			>
+			// custom: Discord has no transparent surface component
+			<View pointerEvents="none" style={[positionOf(root.props.style), style]}>
 				{layers}
 			</View>
 		)

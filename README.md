@@ -1,20 +1,19 @@
-# Liquid Glass YOUBAR
+# Transparent YOUBAR
 
-Turns Discord's YouBar into liquid glass: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.
+Makes Discord's YouBar transparent: a see-through, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.
 
-- **Intensity**: Frosted, Balanced or Clear (how see-through the bar is).
-- **Light border**: turn the thin edge on or off.
-- **Native blur** (experimental, off by default): uses Discord's own blur view behind the bar when it can be found.
-- **Preview** in the settings page.
+- **Transparency**: Low, Medium or High (High is the most see-through). Music Controls has the same three levels.
+- **Music Controls**: while its player is shown above the YouBar, the bar follows the player's level and joins it (square top corners, no seam), so both read as one piece of glass.
+- **Preview** and **Diagnostics** in the settings page.
 
-It restyles the existing YouBar in place, so tab navigation, badges, the Music Controls player above it and other YouBar plugins keep working. Restart Discord after installing or enabling it.
+It restyles the existing YouBar in place, so tab navigation, badges and other YouBar plugins keep working. Restart Discord after installing or enabling it.
 
 ## Install
 
 Add this URL in **Settings → Plugins → Settings Icon → Repository URL**:
 
 ```text
-https://raw.githubusercontent.com/dariussbezy/Liquid-Glass-YOUBAR/main/index.json
+https://raw.githubusercontent.com/dariussbezy/Transparent-YOUBAR/main/index.json
 ```
 
-This repository holds the source and test builds of Liquid Glass YOUBAR. More plugins: [dariussbezy's Plugins](https://github.com/dariussbezy/dariussbezy-Plugins).
+This repository holds the source and test builds of Transparent YOUBAR. More plugins: [dariussbezy's Plugins](https://github.com/dariussbezy/dariussbezy-Plugins).

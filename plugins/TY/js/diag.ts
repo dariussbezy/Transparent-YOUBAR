@@ -110,7 +110,7 @@ export function report(): string {
 		([k, v]) => `${k} renders: ${v}`,
 	)
 	return [
-		'Liquid Glass YOUBAR diagnostics',
+		'Transparent YOUBAR diagnostics',
 		...lines,
 		...renders,
 		...state.errors.map(e => `error ${e}`),
