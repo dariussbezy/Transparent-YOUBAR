@@ -172,18 +172,68 @@ function useGlass(rendered: ReactNode, where: string): ReactNode {
 		shadowOffset: { width: 0, height: 6 },
 		elevation: preset.elevation,
 	}
-	return cloneElement(
-		root,
-		{ style: [root.props.style, style] },
+	const layers = (
 		<GlassLayers
 			key="liquid-glass-youbar"
 			colors={colors}
 			intensity={settings.intensity}
 			radius={radius}
 			blur={settings.realBlur}
-		/>,
+		/>
+	)
+	if (where === 'YouBarBackground') {
+		// Discord's surface is animated and keeps its own opaque colour, so it is replaced by a plain
+		// view with the same position, which only loses the animated corner radius of the quest dock.
+		return (
+			// custom: Discord has no glass surface component
+			<View
+				pointerEvents="none"
+				style={[positionOf(root.props.style), { borderRadius: radius }, style]}
+			>
+				{layers}
+			</View>
+		)
+	}
+	return cloneElement(
+		root,
+		{ style: [root.props.style, style] },
+		layers,
 		...Children.toArray(root.props.children),
 	)
+}
+
+/** Position and size of a style (no colours, no animated values), absolute-fill when unreadable. */
+function positionOf(style: unknown) {
+	const keys = [
+		'position',
+		'top',
+		'bottom',
+		'left',
+		'right',
+		'width',
+		'height',
+		'margin',
+		'marginTop',
+		'marginBottom',
+		'marginLeft',
+		'marginRight',
+		'marginHorizontal',
+		'marginVertical',
+		'flex',
+		'alignSelf',
+		'zIndex',
+	]
+	try {
+		const flat = StyleSheet.flatten(style as never) as Record<string, unknown>
+		const out: Record<string, unknown> = {}
+		for (const key of keys) {
+			const value = flat?.[key]
+			if (typeof value === 'number' || typeof value === 'string')
+				out[key] = value
+		}
+		if (Object.keys(out).length) return out
+	} catch {}
+	return StyleSheet.absoluteFill
 }
 
 /** Finds a component by name and patches its render function with `after`, through `cleanup`. */

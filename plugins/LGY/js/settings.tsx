@@ -4,7 +4,7 @@ import { ToastActionCreators } from '@valenced/discord/actions'
 import { Tokens } from '@valenced/discord/common/tokens'
 import { Design } from '@valenced/discord/design'
 import { Clipboard } from '@valenced/externals/react-native-clipboard'
-import { StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import manifest from '../manifest.json'
 import { report, useDiag } from './diag'
 import { IntensityLabels, Presets, useGlassColors } from './glass'
@@ -121,56 +121,58 @@ function Diagnostics() {
 export default function SettingsComponent() {
 	const settings = useSettings()
 	return (
-		<Page>
-			<Design.Stack spacing={24}>
-				<Design.TableRowGroup title="Preview">
-					<Preview />
-				</Design.TableRowGroup>
-				<Design.TableRowGroup title="Liquid Glass YOUBAR">
-					<Design.TableSwitchRow
-						label="Enable"
-						subLabel="Applies to the YouBar after Discord restarts."
-						icon={icon('PaintPaletteIcon')}
-						value={settings.enabled}
-						onValueChange={value => setSetting('enabled', value)}
-					/>
-					<Design.TableSwitchRow
-						label="Light border"
-						subLabel="A thin light edge around the bar."
-						icon={icon('EyeIcon')}
-						value={settings.border}
-						onValueChange={value => setSetting('border', value)}
-					/>
-					<Design.TableSwitchRow
-						label="Native blur (experimental)"
-						subLabel="Blur what is behind the bar with Discord's own blur view, when it can be found."
-						icon={icon('SparklesIcon')}
-						value={settings.realBlur}
-						onValueChange={value => setSetting('realBlur', value)}
-					/>
-				</Design.TableRowGroup>
-				<Design.TableRadioGroup
-					title="Glass intensity"
-					value={settings.intensity}
-					onChange={value => {
-						if (Intensities.includes(value as Intensity))
-							setSetting('intensity', value as Intensity)
-					}}
-				>
-					{Intensities.map(id => (
-						<Design.TableRadioRow
-							key={id}
-							value={id}
-							label={IntensityLabels[id].label}
-							subLabel={IntensityLabels[id].subLabel}
+		<ScrollView keyboardShouldPersistTaps="handled">
+			<Page>
+				<Design.Stack spacing={24}>
+					<Design.TableRowGroup title="Preview">
+						<Preview />
+					</Design.TableRowGroup>
+					<Design.TableRowGroup title="Liquid Glass YOUBAR">
+						<Design.TableSwitchRow
+							label="Enable"
+							subLabel="Applies to the YouBar after Discord restarts."
+							icon={icon('PaintPaletteIcon')}
+							value={settings.enabled}
+							onValueChange={value => setSetting('enabled', value)}
 						/>
-					))}
-				</Design.TableRadioGroup>
-				<Diagnostics />
-				<Design.Text variant="text-sm/medium" color="text-muted">
-					Liquid Glass YOUBAR {manifest.version}
-				</Design.Text>
-			</Design.Stack>
-		</Page>
+						<Design.TableSwitchRow
+							label="Light border"
+							subLabel="A thin light edge around the bar."
+							icon={icon('EyeIcon')}
+							value={settings.border}
+							onValueChange={value => setSetting('border', value)}
+						/>
+						<Design.TableSwitchRow
+							label="Native blur (experimental)"
+							subLabel="Blur what is behind the bar with Discord's own blur view, when it can be found."
+							icon={icon('SparklesIcon')}
+							value={settings.realBlur}
+							onValueChange={value => setSetting('realBlur', value)}
+						/>
+					</Design.TableRowGroup>
+					<Design.TableRadioGroup
+						title="Glass intensity"
+						value={settings.intensity}
+						onChange={value => {
+							if (Intensities.includes(value as Intensity))
+								setSetting('intensity', value as Intensity)
+						}}
+					>
+						{Intensities.map(id => (
+							<Design.TableRadioRow
+								key={id}
+								value={id}
+								label={IntensityLabels[id].label}
+								subLabel={IntensityLabels[id].subLabel}
+							/>
+						))}
+					</Design.TableRadioGroup>
+					<Diagnostics />
+					<Design.Text variant="text-sm/medium" color="text-muted">
+						Liquid Glass YOUBAR {manifest.version}
+					</Design.Text>
+				</Design.Stack>
+			</Page>
+		</ScrollView>
 	)
 }
