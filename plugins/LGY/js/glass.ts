@@ -56,15 +56,13 @@ export const IntensityLabels: Record<
 }
 
 /** Heights (share of the bar) and alpha multipliers of the stacked bands that fake a vertical gradient. */
-export const HIGHLIGHT_BANDS: [number, number][] = [
-	[0.22, 1],
-	[0.22, 0.6],
-	[0.22, 0.3],
-	[0.22, 0.12],
-]
+export const HIGHLIGHT_BANDS: [number, number][] = Array.from(
+	{ length: 20 },
+	(_, i) => [0.03, (1 - i / 20) ** 2.2],
+)
 
 /** Rounded corners used when Discord's own radius cannot be read. */
-export const FALLBACK_RADIUS = 28
+export const FALLBACK_RADIUS = 20
 
 /** Applies an alpha to a resolved `#rgb`, `#rrggbb(aa)`, `rgb()` or `rgba()` colour. */
 export function withAlpha(color: string | undefined, alpha: number) {
