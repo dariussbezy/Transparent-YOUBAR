@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "name": "Liquid Glass YOUBAR",
+  "description": "Turns the YouBar into liquid glass: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
+  "plugins": {
+    "dariuss.liquid-glass-youbar": {
+      "name": "Liquid Glass YOUBAR",
+      "description": "Turns the YouBar into liquid glass: a translucent, tinted bar with a thin light border, a soft top highlight and a soft shadow. Works on Android and iOS, in dark and light themes.",
+      "author": "dariussbezy <908767091522420817> (https://github.com/dariussbezy \"GitHub\")",
+      "icon": "PaintPaletteIcon",
+      "channels": {
+        "latest": "1.0.0"
+      },
+      "versions": {
+        "1.0.0": {
+          "url": "https://raw.githubusercontent.com/dariussbezy/Liquid-Glass-YOUBAR/main/pool/dariuss.liquid-glass-youbar@1.0.0.zip",
+          "sha256": "ca7897d8e3f926beb1c1bc6a18bd6173e5b85a67b34452d5b9be3b02ea2ffee9",
+          "size": 4575,
+          "dependencies": {
+            "valenced.api": {
+              "version": ">=1 <2"
+            },
+            "discord": {}
+          }
+        }
+      }
+    }
+  }
+}
